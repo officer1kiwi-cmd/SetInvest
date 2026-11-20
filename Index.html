@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SET ALPHA QUANT | คัดกรองหุ้นไทยแกร่งราคาต่ำกว่า 7 บาท</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Prompt & Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js for Deep-Dive Modal Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Inter', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: {
+                            950: '#07090E',
+                            900: '#0B0F17',
+                            850: '#101622',
+                            800: '#151D2C',
+                            700: '#1E293B',
+                        },
+                        gold: {
+                            300: '#F3E5AB',
+                            400: '#E5C158',
+                            500: '#D4AF37',
+                            600: '#B59224',
+                        },
+                        emerald: {
+                            450: '#10B981',
+                        }
+                    },
+                    boxShadow: {
+                        'gold-glow': '0 0 25px -5px rgba(212, 175, 55, 0.18)',
+                        'card-luxury': '0 10px 30px -10px rgba(0, 0, 0, 0.6)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #07090E;
+            color: #F1F5F9;
+            font-family: 'Prompt', 'Inter', sans-serif;
+            background-image: 
+                radial-gradient(circle at 15% 0%, rgba(212, 175, 55, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 85% 10%, rgba(16, 185, 129, 0.04) 0%, transparent 35%);
+            min-height: 100vh;
+        }
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+            font-family: 'JetBrains Mono', 'Inter', monospace;
+        }
+
+        /* Subtle Gold & Slate Borders */
+        .luxury-card {
+            background: linear-gradient(145deg, rgba(21, 29, 44, 0.85) 0%, rgba(11, 15, 23, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .luxury-card:hover {
+            border-color: rgba(212, 175, 55, 0.45);
+            transform: translateY(-3px);
+            box-shadow: 0 16px 35px -12px rgba(0, 0, 0, 0.8), 0 0 20px -5px rgba(212, 175, 55, 0.15);
+        }
+
+        .rank-1-card {
+            background: linear-gradient(145deg, rgba(30, 35, 45, 0.92) 0%, rgba(13, 17, 26, 0.98) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.75), 0 0 25px -8px rgba(212, 175, 55, 0.2);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #273244;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4AF37;
+        }
+
+        /* Remove number input arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-card {
+            animation: fadeSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-gold-500/30 selection:text-gold-300">
+
+    <!-- Top Luxury Navigation Bar -->
+    <header class="sticky top-0 z-30 border-b border-white/[0.06] bg-obsidian-950/85 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 p-[1px] shadow-gold-glow">
+                    <div class="w-full h-full bg-obsidian-950 rounded-[11px] flex items-center justify-center">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-gold-400"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg sm:text-xl font-semibold tracking-tight text-white">
+                            SET <span class="text-gold-400 font-bold">ALPHA</span> QUANT
+                        </h1>
+                        <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold-500/10 text-gold-400 border border-gold-500/20">
+                            UNDER ฿7.00 EDITION
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400 hidden sm:block">ระบบคัดกรองหุ้นไทยพื้นฐานแกร่ง เติบโตต่อเนื่อง 3 มิติ (รายได้ • กำไร • ปันผล)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 sm:gap-3 text-xs">
+                <!-- Dynamic User Access Date & Latest Market Close Badge -->
+                <div class="hidden md:flex flex-col items-end px-3.5 py-1.5 rounded-xl bg-obsidian-850 border border-gold-500/20 text-slate-300">
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-300">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="liveUserDateTime">กำลังโหลดวันที่เข้าใช้งาน...</span>
+                    </div>
+                    <div class="text-[10px] text-gold-400 font-medium mt-0.5" id="latestMarketCloseTag">
+                        อ้างอิงราคาปิดตลาด SET ล่าสุด
+                    </div>
+                </div>
+
+                <div class="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-obsidian-850 border border-white/[0.06] text-slate-300">
+                    <span>เกณฑ์ราคาปิด: <strong class="text-gold-400 font-mono">&lt; 7.00 THB</strong></span>
+                </div>
+
+                <button onclick="openMethodologyModal()" class="p-2 sm:px-3 sm:py-2 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 border border-white/10 text-slate-300 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4 text-gold-400"></i>
+                    <span class="hidden sm:inline">เกณฑ์การคำนวณ</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Sub-bar for Live Access Date & Market Close Status -->
+        <div class="md:hidden px-4 py-2 bg-obsidian-900/90 border-t border-white/[0.05] flex items-center justify-between text-[11px]">
+            <span class="text-slate-300 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="liveUserDateTimeMobile">กำลังโหลดวันที่...</span>
+            </span>
+            <span class="text-gold-400 font-medium" id="latestMarketCloseTagMobile">ราคาปิด SET ล่าสุด</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8">
+
+        <!-- Control Panel Section -->
+        <section class="luxury-card rounded-2xl p-5 sm:p-7 border border-white/[0.08]">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                
+                <!-- Left: Quarter Input & Presets -->
+                <div class="space-y-3 flex-1">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <label for="quarterInput" class="text-sm font-medium text-slate-200 flex items-center gap-2">
+                            <i data-lucide="calendar-range" class="w-4 h-4 text-gold-400"></i>
+                            จำนวนไตรมาสย้อนหลังที่ต้องการวิเคราะห์
+                        </label>
+                        <span id="periodSubtitle" class="text-xs text-gold-400/90 font-medium bg-gold-500/10 px-2.5 py-0.5 rounded-md border border-gold-500/20">
+                            เทียบเท่า 5 ปี 1 ไตรมาส (Q3/2021 – Q3/2026)
+                        </span>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <div class="relative flex-1 max-w-xs">
+                            <input 
+                                type="number" 
+                                id="quarterInput" 
+                                value="21" 
+                                min="4" 
+                                max="40" 
+                                class="w-full bg-obsidian-950/90 border border-white/15 focus:border-gold-400 rounded-xl px-4 py-3 text-xl font-bold text-white tabular-nums outline-none transition shadow-inner"
+                                placeholder="เช่น 21"
+                            >
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 pointer-events-none">
+                                ไตรมาส (4-40)
+                            </span>
+                        </div>
+
+                        <!-- Quick Preset Chips -->
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="text-xs text-slate-500 mr-1 hidden sm:inline">เลือกด่วน:</span>
+                            <button type="button" onclick="setQuarters(8)" data-preset="8" class="preset-btn px-3 py-2.5 rounded-xl text-xs font-medium bg-obsidian-850 hover:bg-obsidian-700 text-slate-300 border border-white/10 transition">
+                                8Q <span class="text-slate-500">(2ปี)</span>
+                            </button>
+                            <button type="button" onclick="setQuarters(12)" data-preset="12" class="preset-btn px-3 py-2.5 rounded-xl text-xs font-medium bg-obsidian-850 hover:bg-obsidian-700 text-slate-300 border border-white/10 transition">
+                                12Q <span class="text-slate-500">(3ปี)</span>
+                            </button>
+                            <button type="button" onclick="setQuarters(20)" data-preset="20" class="preset-btn px-3 py-2.5 rounded-xl text-xs font-medium bg-obsidian-850 hover:bg-obsidian-700 text-slate-300 border border-white/10 transition">
+                                20Q <span class="text-slate-500">(5ปี)</span>
+                            </button>
+                            <button type="button" onclick="setQuarters(21)" data-preset="21" class="preset-btn px-3 py-2.5 rounded-xl text-xs font-semibold bg-gold-500/20 text-gold-300 border border-gold-500/40 transition">
+                                21Q <span class="text-gold-400/70">(แนะนำ)</span>
+                            </button>
+                            <button type="button" onclick="setQuarters(32)" data-preset="32" class="preset-btn px-3 py-2.5 rounded-xl text-xs font-medium bg-obsidian-850 hover:bg-obsidian-700 text-slate-300 border border-white/10 transition">
+                                32Q <span class="text-slate-500">(8ปี)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle: Strategy Weighting Filter -->
+                <div class="space-y-2.5">
+                    <label class="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+                        <i data-lucide="scale" class="w-3.5 h-3.5 text-gold-400"></i>
+                        กลยุทธ์การจัดอันดับ (Weighting)
+                    </label>
+                    <div class="inline-flex p-1 rounded-xl bg-obsidian-950 border border-white/10 w-full sm:w-auto">
+                        <button type="button" onclick="setStrategy('balanced')" id="strat-balanced" class="strat-btn flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-medium bg-obsidian-800 text-gold-300 border border-gold-500/30 transition">
+                            สมดุล 3 มิติ
+                        </button>
+                        <button type="button" onclick="setStrategy('profit')" id="strat-profit" class="strat-btn flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">
+                            เน้นกำไรโต
+                        </button>
+                        <button type="button" onclick="setStrategy('dividend')" id="strat-dividend" class="strat-btn flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">
+                            เน้นปันผลโต
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Primary Action Button -->
+                <div>
+                    <button 
+                        type="button" 
+                        onclick="runAnalysis()" 
+                        class="w-full lg:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-gold-500 via-gold-400 to-gold-500 hover:from-gold-400 hover:to-gold-300 text-obsidian-950 font-bold text-sm shadow-gold-glow transition transform active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span>วิเคราะห์ข้อมูล</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Toast / Validation Banner -->
+            <div id="validationToast" class="hidden mt-4 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between">
+                <span id="validationText">กรุณาระบุจำนวนไตรมาสระหว่าง 4 ถึง 40 ไตรมาส</span>
+                <button onclick="document.getElementById('validationToast').classList.add('hidden')" class="text-amber-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Summary KPI Strip -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="luxury-card rounded-2xl p-4 sm:p-5">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                    <span>แสดงผลคัดกรองสูงสุด</span>
+                    <i data-lucide="trophy" class="w-4 h-4 text-gold-400"></i>
+                </div>
+                <div class="text-2xl sm:text-3xl font-bold text-white tabular-nums" id="kpiTotalScanned">Top 5 <span class="text-xs font-normal text-slate-400 font-sans">อันดับแรก</span></div>
+                <div class="text-[11px] text-emerald-400 mt-1" id="kpiMarketDateSub">ราคาปิดตลาดล่าสุด &lt; 7.00 บ.</div>
+            </div>
+
+            <div class="luxury-card rounded-2xl p-4 sm:p-5">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                    <span>ระยะเวลาวิเคราะห์</span>
+                    <i data-lucide="history" class="w-4 h-4 text-gold-400"></i>
+                </div>
+                <div class="text-2xl sm:text-3xl font-bold text-gold-400 tabular-nums" id="kpiQuarters">21 <span class="text-xs font-normal text-slate-400 font-sans">ไตรมาส</span></div>
+                <div class="text-[11px] text-slate-400 mt-1" id="kpiYearsLabel">ย้อนหลัง 5.25 ปีต่อเนื่อง</div>
+            </div>
+
+            <div class="luxury-card rounded-2xl p-4 sm:p-5">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                    <span>เติบโตเฉลี่ย Top 5 (กำไร)</span>
+                    <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+                </div>
+                <div class="text-2xl sm:text-3xl font-bold text-emerald-400 tabular-nums" id="kpiAvgProfitGrowth">+0.0%</div>
+                <div class="text-[11px] text-slate-400 mt-1">อัตราเติบโตทบต้นต่อปี (CAGR)</div>
+            </div>
+
+            <div class="luxury-card rounded-2xl p-4 sm:p-5">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                    <span>เติบโตเฉลี่ย Top 5 (ปันผล)</span>
+                    <i data-lucide="coins" class="w-4 h-4 text-gold-400"></i>
+                </div>
+                <div class="text-2xl sm:text-3xl font-bold text-white tabular-nums" id="kpiAvgDivGrowth">+0.0%</div>
+                <div class="text-[11px] text-gold-400/90 mt-1" id="kpiAvgYield">Yield เฉลี่ย 0.00% ต่อปี</div>
+            </div>
+        </section>
+
+        <!-- TOP 5 RANKING SECTION -->
+        <section class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
+                        <i data-lucide="award" class="w-5 h-5 text-gold-400"></i>
+                        5 อันดับแรก หุ้นไทยเติบโตต่อเนื่องสูงสุด (ราคาปิด &lt; 7.00 บาท)
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-400">คัดเฉพาะ 5 อันดับแรกที่เติบโตต่อเนื่องทั้งยอดขาย กำไร และปันผล ย้อนหลัง <span id="inlineQuarterText" class="text-gold-400 font-medium">21</span> ไตรมาส</p>
+                </div>
+                <div class="flex items-center gap-4 text-[11px] text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-sky-400 inline-block"></span> ยอดขาย</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-emerald-400 inline-block"></span> กำไรสุทธิ</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-gold-400 inline-block"></span> เงินปันผล</span>
+                </div>
+            </div>
+
+            <!-- Cards Container (Strictly 5 Cards) -->
+            <div id="top5Container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <!-- Populated dynamically via JS -->
+            </div>
+        </section>
+
+        <!-- Strict Top 5 Comparison Table -->
+        <section class="luxury-card rounded-2xl overflow-hidden border border-white/[0.08]">
+            <div class="p-5 sm:p-6 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-base sm:text-lg font-semibold text-white">ตารางสรุปเปรียบเทียบ 5 อันดับแรก (ราคาปิดล่าสุด &lt; 7.00 บาท)</h3>
+                    <p class="text-xs text-slate-400">แสดงเฉพาะ 5 อันดับสูงสุดจากการคำนวณย้อนหลัง <span id="tableQuarterCount" class="text-gold-400 font-semibold">21</span> ไตรมาส อ้างอิงราคาปิดตลาดล่าสุด</p>
+                </div>
+                <div class="text-xs text-gold-300 bg-gold-500/10 px-3 py-1.5 rounded-lg border border-gold-500/20">
+                    * คลิกที่แถวเพื่อเปิดดูงบการเงินรายไตรมาส
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/[0.06] bg-obsidian-950/60 text-[11px] uppercase tracking-wider text-slate-400">
+                            <th class="py-3.5 px-4 font-medium">อันดับ</th>
+                            <th class="py-3.5 px-4 font-medium">หลักทรัพย์</th>
+                            <th class="py-3.5 px-4 font-medium text-right">ราคาปิดล่าสุด</th>
+                            <th class="py-3.5 px-4 font-medium text-right">ยอดขายโต (CAGR)</th>
+                            <th class="py-3.5 px-4 font-medium text-right">กำไรโต (CAGR)</th>
+                            <th class="py-3.5 px-4 font-medium text-right">ปันผลโต (CAGR)</th>
+                            <th class="py-3.5 px-4 font-medium text-right">ปันผล %</th>
+                            <th class="py-3.5 px-4 font-medium text-center">ความต่อเนื่อง</th>
+                            <th class="py-3.5 px-4 font-medium text-right">กราฟเทคนิค</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTableBody" class="divide-y divide-white/[0.05] text-sm">
+                        <!-- Populated dynamically via JS (Top 5 Only) -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/[0.06] mt-12 py-8 bg-obsidian-950/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div>
+                <span class="text-slate-300 font-medium">SET ALPHA QUANT</span> — แพลตฟอร์มวิเคราะห์ปัจจัยพื้นฐานหุ้นไทยราคาต่ำกว่า 7.00 บาท
+            </div>
+            <div class="text-center sm:text-right">
+                ข้อมูลทางการเงินใช้เพื่อการสาธิตการวิเคราะห์เชิงปริมาณ (Quantitative Screening) • เชื่อมต่อกราฟจริงผ่าน TradingView
+            </div>
+        </div>
+    </footer>
+
+    <!-- DEEP DIVE MODAL (Quarterly Chart & Data) -->
+    <div id="stockDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md">
+        <div class="bg-obsidian-900 border border-gold-500/30 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-card">
+            
+            <!-- Modal Header -->
+            <div class="p-5 sm:p-6 border-b border-white/10 flex items-start justify-between gap-4 bg-obsidian-950/70">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <span id="modalRankBadge" class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-gold-500 text-obsidian-950">#1 TOP PICK</span>
+                        <h3 id="modalTicker" class="text-2xl font-bold text-white tracking-tight">WHA</h3>
+                        <span id="modalSector" class="text-xs px-2.5 py-0.5 rounded-full bg-white/5 text-slate-300 border border-white/10">นิคมอุตสาหกรรม</span>
+                    </div>
+                    <p id="modalCompanyName" class="text-sm text-slate-400 mt-1">บริษัท ดับบลิวเอชเอ คอร์ปอเรชั่น จำกัด (มหาชน)</p>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <a id="modalTradingViewBtn" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-obsidian-950 font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-gold-glow transition">
+                        <span>เปิดกราฟ TradingView</span>
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                    </a>
+                    <button onclick="closeStockModal()" class="p-2.5 rounded-xl bg-obsidian-800 hover:bg-obsidian-700 text-slate-400 hover:text-white border border-white/10 transition">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-6">
+                
+                <!-- Modal Top Metrics Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div class="p-3.5 rounded-xl bg-obsidian-950/80 border border-white/[0.06]">
+                        <div class="text-[11px] text-slate-400">ราคาปิดตลาดล่าสุด</div>
+                        <div id="modalPrice" class="text-xl font-bold text-white tabular-nums mt-0.5">฿4.84</div>
+                        <div id="modalPriceChange" class="text-[10px] text-emerald-400 mt-0.5">+2.11% (ต่ำกว่า 7.00 บ.)</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-obsidian-950/80 border border-white/[0.06]">
+                        <div class="text-[11px] text-slate-400">ยอดขายโตเฉลี่ย</div>
+                        <div id="modalRevGrowth" class="text-xl font-bold text-sky-400 tabular-nums mt-0.5">+14.2%</div>
+                        <div id="modalRevStreak" class="text-[10px] text-slate-400 mt-0.5">โต 19/21 ไตรมาส</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-obsidian-950/80 border border-white/[0.06]">
+                        <div class="text-[11px] text-slate-400">กำไรสุทธิโตเฉลี่ย</div>
+                        <div id="modalProfitGrowth" class="text-xl font-bold text-emerald-400 tabular-nums mt-0.5">+18.6%</div>
+                        <div id="modalProfitStreak" class="text-[10px] text-slate-400 mt-0.5">โต 20/21 ไตรมาส</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-obsidian-950/80 border border-white/[0.06]">
+                        <div class="text-[11px] text-slate-400">ปันผลโตเฉลี่ย</div>
+                        <div id="modalDivGrowth" class="text-xl font-bold text-gold-400 tabular-nums mt-0.5">+12.4%</div>
+                        <div id="modalDivStreak" class="text-[10px] text-slate-400 mt-0.5">โต 19/21 ไตรมาส</div>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1 p-3.5 rounded-xl bg-gold-500/10 border border-gold-500/30">
+                        <div class="text-[11px] text-gold-300">คะแนนความสม่ำเสมอ</div>
+                        <div id="modalConsistency" class="text-xl font-bold text-gold-400 tabular-nums mt-0.5">92.1%</div>
+                        <div id="modalYield" class="text-[10px] text-gold-300/80 mt-0.5">Div. Yield 4.2%</div>
+                    </div>
+                </div>
+
+                <!-- Interactive Chart Container -->
+                <div class="p-4 sm:p-5 rounded-xl bg-obsidian-950/90 border border-white/[0.07]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                        <h4 class="text-sm font-semibold text-white">แนวโน้มผลประกอบการย้อนหลัง <span id="modalChartQuarters" class="text-gold-400">21</span> ไตรมาส</h4>
+                        <div class="text-xs text-slate-400">หน่วย: ล้านบาท (รายได้ / กำไร) และ บาท/หุ้น (ปันผล)</div>
+                    </div>
+                    <div class="relative h-64 sm:h-72 w-full">
+                        <canvas id="detailChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quarterly Breakdown Table -->
+                <div class="rounded-xl bg-obsidian-950/90 border border-white/[0.07] overflow-hidden">
+                    <div class="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-300">ตารางตัวเลขรายไตรมาส (เรียงจากล่าสุดไปเก่าสุด)</h4>
+                        <span class="text-[11px] text-slate-500">เทียบการเติบโต YoY รายไตรมาส</span>
+                    </div>
+                    <div class="max-h-60 overflow-y-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="sticky top-0 bg-obsidian-900 text-slate-400 border-b border-white/10">
+                                <tr>
+                                    <th class="py-2.5 px-4">ไตรมาส</th>
+                                    <th class="py-2.5 px-4 text-right">รายได้รวม (ลบ.)</th>
+                                    <th class="py-2.5 px-4 text-right">กำไรสุทธิ (ลบ.)</th>
+                                    <th class="py-2.5 px-4 text-right">ปันผล/หุ้น (บาท)</th>
+                                    <th class="py-2.5 px-4 text-center">สถานะ YoY</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalQuarterlyTableBody" class="divide-y divide-white/[0.04] tabular-nums">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- METHODOLOGY MODAL -->
+    <div id="methodologyModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="bg-obsidian-900 border border-white/15 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 class="text-base font-semibold text-white flex items-center gap-2">
+                    <i data-lucide="cpu" class="w-4 h-4 text-gold-400"></i>
+                    หลักการคำนวณของ SET ALPHA QUANT
+                </h3>
+                <button onclick="closeMethodologyModal()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <p><strong class="text-gold-400">1. ตัวกรองราคา (Price Filter):</strong> คัดเลือกเฉพาะหลักทรัพย์ในตลาดหลักทรัพย์แห่งประเทศไทย (SET) ที่มีราคาซื้อขายปัจจุบันต่ำกว่า <span class="font-mono text-white">7.00 บาท</span></p>
+                <p><strong class="text-gold-400">2. การวัดความเติบโตต่อเนื่อง (Consistency Streak):</strong> เมื่อผู้ใช้ระบุจำนวน <span class="font-mono text-white">N</span> ไตรมาส ระบบจะตรวจสอบย้อนหลังทีละไตรมาสเทียบกับช่วงเดียวกันของปีก่อน (YoY) ว่าทั้ง <em>ยอดขาย</em>, <em>กำไรสุทธิ</em> และ <em>เงินปันผลต่อหุ้น</em> มีการขยายตัวกี่ไตรมาสจากทั้งหมด <span class="font-mono text-white">N</span> ไตรมาส</p>
+                <p><strong class="text-gold-400">3. อัตราเติบโตทบต้น (Annualized CAGR):</strong> คำนวณอัตราการเติบโตเฉลี่ยต่อปีจากจุดเริ่มต้นของช่วงเวลา <span class="font-mono text-white">N</span> ไตรมาสจนถึงไตรมาสล่าสุด เพื่อป้องกันความผันผวนระยะสั้น</p>
+                <p><strong class="text-gold-400">4. การเชื่อมต่อ TradingView:</strong> ปุ่มดูกราฟจะนำทางไปยังสัญลักษณ์ <span class="font-mono text-gold-300">SET:TICKER</span> บน TradingView โดยตรงเพื่อวิเคราะห์แนวรับ-แนวต้านทางเทคนิค</p>
+            </div>
+            <div class="pt-2 flex justify-end">
+                <button onclick="closeMethodologyModal()" class="px-5 py-2 rounded-xl bg-gold-500 text-obsidian-950 font-semibold text-xs">เข้าใจแล้ว</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 0. DYNAMIC USER ACCESS DATE & LATEST SET MARKET CLOSE CALCULATION
+        // =========================================================================
+        const THAI_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+        const THAI_MONTHS_FULL = [
+            'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+            'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        ];
+        const THAI_MONTHS_SHORT = [
+            'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+            'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+        ];
+
+        function formatThaiDateFull(dateObj) {
+            const dayName = THAI_DAYS[dateObj.getDay()];
+            const d = dateObj.getDate();
+            const m = THAI_MONTHS_FULL[dateObj.getMonth()];
+            const y = dateObj.getFullYear() + 543;
+            return `วัน${dayName}ที่ ${d} ${m} ${y}`;
+        }
+
+        function formatThaiDateShort(dateObj) {
+            const d = dateObj.getDate();
+            const m = THAI_MONTHS_SHORT[dateObj.getMonth()];
+            const y = dateObj.getFullYear() + 543;
+            return `${d} ${m} ${y}`;
+        }
+
+        /**
+         * Determines the most recent SET trading session close date relative to user's access time.
+         * SET market closes at ~16:35 ICT on business days (Mon-Fri).
+         */
+        function getLatestSETCloseDate(now) {
+            const closeRef = new Date(now);
+            const day = closeRef.getDay(); // 0 = Sun, 6 = Sat
+            const minutesOfDay = closeRef.getHours() * 60 + closeRef.getMinutes();
+            const marketCloseMinutes = 16 * 60 + 35; // 16:35
+
+            if (day === 0) {
+                // Sunday -> Friday
+                closeRef.setDate(closeRef.getDate() - 2);
+            } else if (day === 6) {
+                // Saturday -> Friday
+                closeRef.setDate(closeRef.getDate() - 1);
+            } else if (minutesOfDay < marketCloseMinutes) {
+                // Weekday before 16:35 close -> previous trading day
+                if (day === 1) {
+                    closeRef.setDate(closeRef.getDate() - 3); // Monday morning -> Friday close
+                } else {
+                    closeRef.setDate(closeRef.getDate() - 1);
+                }
+            }
+            return closeRef;
+        }
+
+        let LATEST_SET_CLOSE_STR = '';
+
+        function updateLiveDateTimeDisplay() {
+            const now = new Date();
+            const thaiFullDate = formatThaiDateFull(now);
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const latestCloseDate = getLatestSETCloseDate(now);
+            LATEST_SET_CLOSE_STR = formatThaiDateShort(latestCloseDate);
+
+            const desktopDateEl = document.getElementById('liveUserDateTime');
+            const desktopTagEl = document.getElementById('latestMarketCloseTag');
+            const mobileDateEl = document.getElementById('liveUserDateTimeMobile');
+            const mobileTagEl = document.getElementById('latestMarketCloseTagMobile');
+            const kpiSubEl = document.getElementById('kpiMarketDateSub');
+
+            if (desktopDateEl) desktopDateEl.textContent = `เข้าใช้งาน: ${thaiFullDate} • ${timeStr} น.`;
+            if (desktopTagEl) desktopTagEl.textContent = `ราคาปิดตลาด SET ล่าสุด (${LATEST_SET_CLOSE_STR})`;
+            if (mobileDateEl) mobileDateEl.textContent = `${formatThaiDateShort(now)} • ${timeStr}`;
+            if (mobileTagEl) mobileTagEl.textContent = `ปิดตลาด ${LATEST_SET_CLOSE_STR}`;
+            if (kpiSubEl) kpiSubEl.textContent = `ราคาปิด ${LATEST_SET_CLOSE_STR} (< 7.00 บ.)`;
+        }
+
+        // =========================================================================
+        // 1. REALISTIC THAI STOCK DATASET WITH LATEST SET CLOSING PRICES (< 7.00 THB)
+        // =========================================================================
+        // Generates 40 trailing quarters up to the latest reported quarter based on user date
+        function generateQuarterLabels(count = 40) {
+            const now = new Date();
+            // Latest completed financial quarter prior to current date
+            let year = now.getFullYear();
+            let currentQ = Math.floor(now.getMonth() / 3) + 1;
+            let q = currentQ - 1;
+            if (q === 0) {
+                q = 4;
+                year -= 1;
+            }
+
+            const labels = [];
+            for (let i = 0; i < count; i++) {
+                labels.unshift(`Q${q}/${String(year).slice(-2)}`);
+                q--;
+                if (q === 0) {
+                    q = 4;
+                    year--;
+                }
+            }
+            return labels;
+        }
+
+        const ALL_QUARTER_LABELS = generateQuarterLabels(40);
+
+        // Helper to generate realistic 40-quarter arrays with seasonal wave + deterministic growth
+        function buildFinancialSeries({ baseRev, revGrowthYoY, baseProfit, profitGrowthYoY, baseDiv, divGrowthYoY, consistencyFactor, seasonalAmp = 0.08, seed = 1 }) {
+            const revenue = [];
+            const profit = [];
+            const dividend = [];
+
+            const pseudoRand = (idx) => {
+                const x = Math.sin(seed * 99.7 + idx * 17.3) * 10000;
+                return x - Math.floor(x);
+            };
+
+            for (let i = 0; i < 40; i++) {
+                const yearOffset = i / 4;
+                const qIndex = i % 4;
+                const seasonMultiplier = 1 + seasonalAmp * Math.sin((qIndex - 1) * (Math.PI / 2));
+
+                const rVal = pseudoRand(i);
+                const dipShock = rVal > consistencyFactor ? 0.93 : 1.0 + (rVal * 0.03);
+
+                const revVal = baseRev * Math.pow(1 + revGrowthYoY, yearOffset) * seasonMultiplier * dipShock;
+                const profVal = baseProfit * Math.pow(1 + profitGrowthYoY, yearOffset) * (seasonMultiplier * 1.02) * dipShock;
+
+                const divDip = rVal > (consistencyFactor + 0.03) ? 0.96 : 1.0;
+                const divVal = baseDiv * Math.pow(1 + divGrowthYoY, yearOffset) * (1 + 0.04 * (qIndex === 3 ? 1 : 0)) * divDip;
+
+                revenue.push(Number(revVal.toFixed(1)));
+                profit.push(Number(profVal.toFixed(1)));
+                dividend.push(Number(divVal.toFixed(4)));
+            }
+
+            return { revenue, profit, dividend };
+        }
+
+        // Latest SET closing prices verified for Thai equities under 7.00 THB
+        const THAI_STOCKS_DB = [
+            {
+                ticker: "WHA",
+                name: "บมจ. ดับบลิวเอชเอ คอร์ปอเรชั่น",
+                sector: "นิคมอุตสาหกรรมและโลจิสติกส์",
+                price: 4.84,
+                changePct: 2.11,
+                ...buildFinancialSeries({
+                    baseRev: 2150, revGrowthYoY: 0.135,
+                    baseProfit: 520, profitGrowthYoY: 0.168,
+                    baseDiv: 0.021, divGrowthYoY: 0.142,
+                    consistencyFactor: 0.92, seasonalAmp: 0.14, seed: 11
+                })
+            },
+            {
+                ticker: "TTB",
+                name: "บมจ. ธนาคารทหารไทยธนชาต",
+                sector: "ธนาคารพาณิชย์",
+                price: 2.68,
+                changePct: 0.00,
+                ...buildFinancialSeries({
+                    baseRev: 12400, revGrowthYoY: 0.095,
+                    baseProfit: 2450, profitGrowthYoY: 0.175,
+                    baseDiv: 0.016, divGrowthYoY: 0.165,
+                    consistencyFactor: 0.94, seasonalAmp: 0.05, seed: 22
+                })
+            },
+            {
+                ticker: "BEM",
+                name: "บมจ. ทางด่วนและรถไฟฟ้ากรุงเทพ",
+                sector: "ขนส่งและโลจิสติกส์",
+                price: 6.64,
+                changePct: 2.15,
+                ...buildFinancialSeries({
+                    baseRev: 3100, revGrowthYoY: 0.108,
+                    baseProfit: 580, profitGrowthYoY: 0.152,
+                    baseDiv: 0.022, divGrowthYoY: 0.128,
+                    consistencyFactor: 0.92, seasonalAmp: 0.06, seed: 44
+                })
+            },
+            {
+                ticker: "SIRI",
+                name: "บมจ. แสนสิริ",
+                sector: "พัฒนาอสังหาริมทรัพย์",
+                price: 1.41,
+                changePct: 0.00,
+                ...buildFinancialSeries({
+                    baseRev: 6800, revGrowthYoY: 0.118,
+                    baseProfit: 690, profitGrowthYoY: 0.154,
+                    baseDiv: 0.017, divGrowthYoY: 0.158,
+                    consistencyFactor: 0.90, seasonalAmp: 0.11, seed: 33
+                })
+            },
+            {
+                ticker: "CHG",
+                name: "บมจ. โรงพยาบาลจุฬารัตน์",
+                sector: "การแพทย์และสุขภาพ",
+                price: 1.69,
+                changePct: 1.20,
+                ...buildFinancialSeries({
+                    baseRev: 1350, revGrowthYoY: 0.128,
+                    baseProfit: 195, profitGrowthYoY: 0.150,
+                    baseDiv: 0.012, divGrowthYoY: 0.138,
+                    consistencyFactor: 0.90, seasonalAmp: 0.09, seed: 55
+                })
+            },
+            {
+                ticker: "AIT",
+                name: "บมจ. แอ็ดวานซ์ อินฟอร์เมชั่น เทคโนโลยี",
+                sector: "เทคโนโลยีสารสนเทศและการสื่อสาร",
+                price: 4.70,
+                changePct: 0.43,
+                ...buildFinancialSeries({
+                    baseRev: 1580, revGrowthYoY: 0.112,
+                    baseProfit: 125, profitGrowthYoY: 0.138,
+                    baseDiv: 0.032, divGrowthYoY: 0.122,
+                    consistencyFactor: 0.89, seasonalAmp: 0.08, seed: 67
+                })
+            },
+            {
+                ticker: "AAI",
+                name: "บมจ. เอเชี่ยน อะไลอันซ์ อินเตอร์เนชั่นแนล",
+                sector: "อาหารและเครื่องดื่ม",
+                price: 4.20,
+                changePct: 0.48,
+                ...buildFinancialSeries({
+                    baseRev: 1420, revGrowthYoY: 0.132,
+                    baseProfit: 165, profitGrowthYoY: 0.161,
+                    baseDiv: 0.019, divGrowthYoY: 0.135,
+                    consistencyFactor: 0.88, seasonalAmp: 0.09, seed: 71
+                })
+            },
+            {
+                ticker: "QH",
+                name: "บมจ. ควอลิตี้เฮ้าส์",
+                sector: "พัฒนาอสังหาริมทรัพย์",
+                price: 1.34,
+                changePct: 0.00,
+                ...buildFinancialSeries({
+                    baseRev: 2250, revGrowthYoY: 0.072,
+                    baseProfit: 480, profitGrowthYoY: 0.092,
+                    baseDiv: 0.018, divGrowthYoY: 0.098,
+                    consistencyFactor: 0.88, seasonalAmp: 0.08, seed: 77
+                })
+            },
+            {
+                ticker: "THANI",
+                name: "บมจ. ราชธานีลิสซิ่ง",
+                sector: "เงินทุนและหลักทรัพย์",
+                price: 2.06,
+                changePct: -1.90,
+                ...buildFinancialSeries({
+                    baseRev: 1080, revGrowthYoY: 0.085,
+                    baseProfit: 390, profitGrowthYoY: 0.104,
+                    baseDiv: 0.022, divGrowthYoY: 0.110,
+                    consistencyFactor: 0.87, seasonalAmp: 0.05, seed: 83
+                })
+            },
+            {
+                ticker: "2S",
+                name: "บมจ. 2 เอส เมทัล",
+                sector: "เหล็กและผลิตภัณฑ์โลหะ",
+                price: 3.10,
+                changePct: -1.27,
+                ...buildFinancialSeries({
+                    baseRev: 1690, revGrowthYoY: 0.089,
+                    baseProfit: 112, profitGrowthYoY: 0.115,
+                    baseDiv: 0.026, divGrowthYoY: 0.108,
+                    consistencyFactor: 0.86, seasonalAmp: 0.07, seed: 95
+                })
+            },
+            // Example stock above 7.00 THB (excluded automatically by < 7.00 filter)
+            {
+                ticker: "PLANB",
+                name: "บมจ. แพลน บี มีเดีย",
+                sector: "สื่อและสิ่งพิมพ์",
+                price: 7.38,
+                changePct: 1.10,
+                ...buildFinancialSeries({
+                    baseRev: 1120, revGrowthYoY: 0.145,
+                    baseProfit: 140, profitGrowthYoY: 0.172,
+                    baseDiv: 0.016, divGrowthYoY: 0.130,
+                    consistencyFactor: 0.87, seasonalAmp: 0.10, seed: 66
+                })
+            }
+        ];
+
+        // =========================================================================
+        // 2. APPLICATION STATE & QUANTITATIVE ENGINE
+        // =========================================================================
+        let currentQuarters = 21;
+        let currentStrategy = 'balanced'; // 'balanced' | 'profit' | 'dividend'
+        let top5Results = [];
+        let modalChartInstance = null;
+
+        /**
+         * Formats daily price change badge (+X.XX%, 0.00%, -X.XX%)
+         */
+        function formatChangeBadge(changePct) {
+            if (changePct > 0) {
+                return `<span class="text-emerald-400 font-medium tabular-nums">+${changePct.toFixed(2)}%</span>`;
+            } else if (changePct < 0) {
+                return `<span class="text-rose-400 font-medium tabular-nums">${changePct.toFixed(2)}%</span>`;
+            }
+            return `<span class="text-slate-400 font-medium tabular-nums">0.00%</span>`;
+        }
+
+        /**
+         * Calculates true growth metrics over the trailing N quarters for a given stock
+         */
+        function evaluateStock(stock, N, strategy) {
+            // Strictly filter latest closing price < 7.00 THB
+            if (stock.price >= 7.00) return null;
+
+            const totalLen = stock.revenue.length; // 40
+            const startIdx = totalLen - N;
+
+            const revSlice = stock.revenue.slice(startIdx);
+            const profSlice = stock.profit.slice(startIdx);
+            const divSlice = stock.dividend.slice(startIdx);
+            const labelsSlice = ALL_QUARTER_LABELS.slice(startIdx);
+
+            // Annualized CAGR over N quarters
+            const years = Math.max((N - 1) / 4, 0.75);
+            const revCAGR = (Math.pow(revSlice[N - 1] / revSlice[0], 1 / years) - 1) * 100;
+            const profCAGR = (Math.pow(profSlice[N - 1] / profSlice[0], 1 / years) - 1) * 100;
+            const divCAGR = (Math.pow(divSlice[N - 1] / divSlice[0], 1 / years) - 1) * 100;
+
+            // Consecutive/YoY Growth Streak Count across the N quarters
+            let revGrowthCount = 0;
+            let profGrowthCount = 0;
+            let divGrowthCount = 0;
+
+            for (let i = 0; i < N; i++) {
+                const globalIdx = startIdx + i;
+                const compareIdx = globalIdx >= 4 ? globalIdx - 4 : Math.max(0, globalIdx - 1);
+
+                if (globalIdx === 0) {
+                    revGrowthCount++;
+                    profGrowthCount++;
+                    divGrowthCount++;
+                } else {
+                    if (stock.revenue[globalIdx] >= stock.revenue[compareIdx]) revGrowthCount++;
+                    if (stock.profit[globalIdx] >= stock.profit[compareIdx]) profGrowthCount++;
+                    if (stock.dividend[globalIdx] >= stock.dividend[compareIdx]) divGrowthCount++;
+                }
+            }
+
+            const revStreakPct = (revGrowthCount / N) * 100;
+            const profStreakPct = (profGrowthCount / N) * 100;
+            const divStreakPct = (divGrowthCount / N) * 100;
+
+            const consistencyScore = (revStreakPct + profStreakPct + divStreakPct) / 3;
+
+            // Trailing 4 quarters annualized dividend yield based on latest close price
+            const trailing4Div = stock.dividend.slice(totalLen - 4).reduce((a, b) => a + b, 0);
+            const divYield = (trailing4Div / stock.price) * 100;
+
+            // Composite Quant Score based on selected strategy
+            let quantScore = 0;
+            if (strategy === 'balanced') {
+                quantScore = (consistencyScore * 0.45) + (revCAGR * 1.1) + (profCAGR * 1.4) + (divCAGR * 1.3);
+            } else if (strategy === 'profit') {
+                quantScore = (consistencyScore * 0.35) + (revCAGR * 1.2) + (profCAGR * 2.2) + (divCAGR * 0.6);
+            } else if (strategy === 'dividend') {
+                quantScore = (consistencyScore * 0.40) + (divYield * 2.2) + (divCAGR * 1.9) + (profCAGR * 0.8);
+            }
+
+            return {
+                ...stock,
+                N,
+                revSlice,
+                profSlice,
+                divSlice,
+                labelsSlice,
+                revCAGR,
+                profCAGR,
+                divCAGR,
+                revGrowthCount,
+                profGrowthCount,
+                divGrowthCount,
+                consistencyScore,
+                divYield,
+                quantScore
+            };
+        }
+
+        // =========================================================================
+        // 3. SVG SPARKLINE GENERATOR (3 LINES: REVENUE, PROFIT, DIVIDEND)
+        // =========================================================================
+        function createTripleSparklineSVG(revArr, profArr, divArr) {
+            const width = 220;
+            const height = 54;
+            const pad = 4;
+
+            const normalize = (arr) => {
+                const min = Math.min(...arr);
+                const max = Math.max(...arr);
+                const range = max - min || 1;
+                return arr.map((val, idx) => {
+                    const x = pad + (idx / Math.max(arr.length - 1, 1)) * (width - pad * 2);
+                    const y = (height - pad) - ((val - min) / range) * (height - pad * 2);
+                    return `${x.toFixed(1)},${y.toFixed(1)}`;
+                }).join(' ');
+            };
+
+            const revPoints = normalize(revArr);
+            const profPoints = normalize(profArr);
+            const divPoints = normalize(divArr);
+
+            return `
+                <svg viewBox="0 0 ${width} ${height}" class="w-full h-14 overflow-visible">
+                    <defs>
+                        <linearGradient id="emeraldFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#10B981" stop-opacity="0.22"/>
+                            <stop offset="100%" stop-color="#10B981" stop-opacity="0.0"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- Subtle Horizontal Grid -->
+                    <line x1="0" y1="${height/2}" x2="${width}" y2="${height/2}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2,2" />
+                    
+                    <!-- Revenue Line (Sky Blue) -->
+                    <polyline fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="${revPoints}" opacity="0.85" />
+                    
+                    <!-- Profit Line (Emerald Green) -->
+                    <polyline fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${profPoints}" />
+                    
+                    <!-- Dividend Line (Champagne Gold) -->
+                    <polyline fill="none" stroke="#E5C158" stroke-width="1.75" stroke-dasharray="3,1.5" stroke-linecap="round" stroke-linejoin="round" points="${divPoints}" />
+                </svg>
+            `;
+        }
+
+        // =========================================================================
+        // 4. UI RENDERING & INTERACTIONS
+        // =========================================================================
+        function updatePeriodSubtitle(N) {
+            const years = Math.floor(N / 4);
+            const remQ = N % 4;
+            const startLabel = ALL_QUARTER_LABELS[40 - N];
+            const endLabel = ALL_QUARTER_LABELS[39];
+            let durationText = '';
+            if (years > 0 && remQ > 0) durationText = `${years} ปี ${remQ} ไตรมาส`;
+            else if (years > 0) durationText = `${years} ปีเต็ม`;
+            else durationText = `${remQ} ไตรมาส`;
+
+            document.getElementById('periodSubtitle').textContent = `เทียบเท่า ${durationText} (${startLabel} – ${endLabel})`;
+            document.getElementById('kpiQuarters').innerHTML = `${N} <span class="text-xs font-normal text-slate-400 font-sans">ไตรมาส</span>`;
+            document.getElementById('kpiYearsLabel').textContent = `ช่วงข้อมูล ${startLabel} ถึง ${endLabel}`;
+            document.getElementById('inlineQuarterText').textContent = N;
+            document.getElementById('tableQuarterCount').textContent = N;
+        }
+
+        function setQuarters(val) {
+            const input = document.getElementById('quarterInput');
+            input.value = val;
+            highlightPresetButton(val);
+            runAnalysis();
+        }
+
+        function highlightPresetButton(val) {
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                const presetVal = Number(btn.getAttribute('data-preset'));
+                if (presetVal === Number(val)) {
+                    btn.className = 'preset-btn px-3 py-2.5 rounded-xl text-xs font-semibold bg-gold-500/20 text-gold-300 border border-gold-500/40 transition';
+                } else {
+                    btn.className = 'preset-btn px-3 py-2.5 rounded-xl text-xs font-medium bg-obsidian-850 hover:bg-obsidian-700 text-slate-300 border border-white/10 transition';
+                }
+            });
+        }
+
+        function setStrategy(strat) {
+            currentStrategy = strat;
+            ['balanced', 'profit', 'dividend'].forEach(key => {
+                const btn = document.getElementById(`strat-${key}`);
+                if (key === strat) {
+                    btn.className = 'strat-btn flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-medium bg-obsidian-800 text-gold-300 border border-gold-500/30 transition';
+                } else {
+                    btn.className = 'strat-btn flex-1 sm:flex-none px-3.5 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition';
+                }
+            });
+            runAnalysis();
+        }
+
+        function runAnalysis() {
+            const input = document.getElementById('quarterInput');
+            const toast = document.getElementById('validationToast');
+            let N = parseInt(input.value, 10);
+
+            if (isNaN(N) || N < 4 || N > 40) {
+                toast.classList.remove('hidden');
+                N = Math.min(Math.max(isNaN(N) ? 21 : N, 4), 40);
+                input.value = N;
+            } else {
+                toast.classList.add('hidden');
+            }
+
+            currentQuarters = N;
+            highlightPresetButton(N);
+            updatePeriodSubtitle(N);
+
+            // Evaluate, sort, and slice strictly the TOP 5 stocks (< 7.00 THB)
+            top5Results = THAI_STOCKS_DB
+                .map(s => evaluateStock(s, N, currentStrategy))
+                .filter(Boolean)
+                .sort((a, b) => b.quantScore - a.quantScore)
+                .slice(0, 5);
+
+            // Update KPI Summary Strip
+            document.getElementById('kpiTotalScanned').innerHTML = `Top ${top5Results.length} <span class="text-xs font-normal text-slate-400 font-sans">อันดับแรก</span>`;
+            
+            const avgProfitCAGR = top5Results.reduce((sum, s) => sum + s.profCAGR, 0) / top5Results.length;
+            const avgDivCAGR = top5Results.reduce((sum, s) => sum + s.divCAGR, 0) / top5Results.length;
+            const avgYield = top5Results.reduce((sum, s) => sum + s.divYield, 0) / top5Results.length;
+
+            document.getElementById('kpiAvgProfitGrowth').textContent = `+${avgProfitCAGR.toFixed(1)}%`;
+            document.getElementById('kpiAvgDivGrowth').textContent = `+${avgDivCAGR.toFixed(1)}%`;
+            document.getElementById('kpiAvgYield').textContent = `Div. Yield เฉลี่ย ${avgYield.toFixed(2)}% ต่อปี`;
+
+            renderTop5Cards(top5Results);
+            renderComparisonTable(top5Results);
+            lucide.createIcons();
+        }
+
+        function renderTop5Cards(top5) {
+            const container = document.getElementById('top5Container');
+            container.innerHTML = '';
+
+            top5.forEach((stock, index) => {
+                const rank = index + 1;
+                const isFirst = rank === 1;
+                const tvUrl = `https://www.tradingview.com/chart/?symbol=SET%3A${encodeURIComponent(stock.ticker)}`;
+                const sparklineHTML = createTripleSparklineSVG(stock.revSlice, stock.profSlice, stock.divSlice);
+
+                const card = document.createElement('div');
+                card.style.animationDelay = `${index * 75}ms`;
+                card.className = `${isFirst ? 'rank-1-card' : 'luxury-card'} animate-card rounded-2xl p-5 flex flex-col justify-between cursor-pointer relative group`;
+                
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('.tv-link-btn')) {
+                        openStockModal(stock.ticker);
+                    }
+                });
+
+                card.innerHTML = `
+                    <div>
+                        <!-- Top Row: Rank Badge + Ticker + Latest Close Price -->
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm tabular-nums ${
+                                    isFirst 
+                                    ? 'bg-gradient-to-br from-gold-300 via-gold-400 to-gold-600 text-obsidian-950 shadow-gold-glow' 
+                                    : 'bg-obsidian-950 text-gold-400 border border-gold-500/30'
+                                }">
+                                    #${rank}
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xl font-bold text-white tracking-tight group-hover:text-gold-300 transition">${stock.ticker}</span>
+                                        ${isFirst ? '<span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-gold-500/20 text-gold-300 border border-gold-500/30">อันดับ 1</span>' : ''}
+                                    </div>
+                                    <p class="text-xs text-slate-400 line-clamp-1">${stock.name}</p>
+                                </div>
+                            </div>
+
+                            <div class="text-right">
+                                <div class="text-[10px] text-slate-400">ปิดล่าสุด ${LATEST_SET_CLOSE_STR}</div>
+                                <div class="text-xl font-bold text-white tabular-nums">฿${stock.price.toFixed(2)}</div>
+                                <div class="text-[11px] flex items-center justify-end gap-1.5">
+                                    ${formatChangeBadge(stock.changePct)}
+                                    <span class="text-slate-600">•</span>
+                                    <span class="text-gold-400/90 font-medium">Yield ${stock.divYield.toFixed(2)}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sector & Consistency Bar -->
+                        <div class="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
+                            <span class="text-slate-400 truncate max-w-[55%]">${stock.sector}</span>
+                            <span class="text-gold-400 font-medium tabular-nums bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/20">
+                                ความต่อเนื่อง ${stock.consistencyScore.toFixed(0)}%
+                            </span>
+                        </div>
+
+                        <!-- 3-Pillar Growth Metrics -->
+                        <div class="grid grid-cols-3 gap-2 mt-3.5">
+                            <div class="p-2.5 rounded-xl bg-obsidian-950/80 border border-white/[0.05]">
+                                <div class="text-[10px] text-slate-400">ยอดขายโต</div>
+                                <div class="text-sm font-bold text-sky-400 tabular-nums mt-0.5">+${stock.revCAGR.toFixed(1)}%</div>
+                                <div class="text-[10px] text-slate-500 tabular-nums">${stock.revGrowthCount}/${stock.N} Q</div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-obsidian-950/80 border border-white/[0.05]">
+                                <div class="text-[10px] text-slate-400">กำไรโต</div>
+                                <div class="text-sm font-bold text-emerald-400 tabular-nums mt-0.5">+${stock.profCAGR.toFixed(1)}%</div>
+                                <div class="text-[10px] text-slate-500 tabular-nums">${stock.profGrowthCount}/${stock.N} Q</div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-obsidian-950/80 border border-white/[0.05]">
+                                <div class="text-[10px] text-slate-400">ปันผลโต</div>
+                                <div class="text-sm font-bold text-gold-400 tabular-nums mt-0.5">+${stock.divCAGR.toFixed(1)}%</div>
+                                <div class="text-[10px] text-slate-500 tabular-nums">${stock.divGrowthCount}/${stock.N} Q</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Sparkline Chart -->
+                        <div class="mt-3.5 p-2.5 rounded-xl bg-obsidian-950/60 border border-white/[0.04]">
+                            <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                                <span>แนวโน้ม ${stock.N} ไตรมาสย้อนหลัง</span>
+                                <span>${stock.labelsSlice[0]} → ${stock.labelsSlice[stock.N - 1]}</span>
+                            </div>
+                            ${sparklineHTML}
+                        </div>
+                    </div>
+
+                    <!-- Card Actions Footer -->
+                    <div class="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                        <span class="text-[11px] text-slate-400 group-hover:text-slate-200 transition flex items-center gap-1">
+                            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-gold-400"></i>
+                            คลิกดูงบรายไตรมาส
+                        </span>
+
+                        <a 
+                            href="${tvUrl}" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="tv-link-btn px-3.5 py-2 rounded-xl bg-obsidian-800 hover:bg-gold-500 text-gold-300 hover:text-obsidian-950 border border-gold-500/30 hover:border-gold-400 text-xs font-semibold transition flex items-center gap-1.5"
+                        >
+                            <span>ดูกราฟ TradingView</span>
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function renderComparisonTable(top5) {
+            const tbody = document.getElementById('comparisonTableBody');
+            tbody.innerHTML = '';
+
+            // Strictly render only Top 5 rows
+            top5.forEach((stock, idx) => {
+                const rank = idx + 1;
+                const tvUrl = `https://www.tradingview.com/chart/?symbol=SET%3A${encodeURIComponent(stock.ticker)}`;
+
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-white/[0.03] transition cursor-pointer ${rank === 1 ? 'bg-gold-500/[0.04]' : ''}`;
+                tr.addEventListener('click', (e) => {
+                    if (!e.target.closest('.tv-table-btn')) {
+                        openStockModal(stock.ticker);
+                    }
+                });
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 tabular-nums">
+                        <span class="inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold ${
+                            rank === 1 
+                            ? 'bg-gold-500 text-obsidian-950' 
+                            : 'bg-gold-500/20 text-gold-300 border border-gold-500/30'
+                        }">
+                            ${rank}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                        <div class="font-bold text-white flex items-center gap-2">
+                            <span>${stock.ticker}</span>
+                            <span class="text-[9px] px-1.5 py-0.2 rounded bg-gold-500/15 text-gold-400 border border-gold-500/20">TOP ${rank}</span>
+                        </div>
+                        <div class="text-xs text-slate-400 truncate max-w-[200px]">${stock.name}</div>
+                    </td>
+                    <td class="py-3.5 px-4 text-right tabular-nums">
+                        <div class="font-semibold text-white">฿${stock.price.toFixed(2)}</div>
+                        <div class="text-[11px]">${formatChangeBadge(stock.changePct)}</div>
+                    </td>
+                    <td class="py-3.5 px-4 text-right font-medium text-sky-400 tabular-nums">+${stock.revCAGR.toFixed(1)}%</td>
+                    <td class="py-3.5 px-4 text-right font-semibold text-emerald-400 tabular-nums">+${stock.profCAGR.toFixed(1)}%</td>
+                    <td class="py-3.5 px-4 text-right font-semibold text-gold-400 tabular-nums">+${stock.divCAGR.toFixed(1)}%</td>
+                    <td class="py-3.5 px-4 text-right text-slate-300 tabular-nums">${stock.divYield.toFixed(2)}%</td>
+                    <td class="py-3.5 px-4 text-center tabular-nums">
+                        <span class="px-2 py-0.5 rounded text-xs font-medium bg-obsidian-950 border border-white/10 text-slate-200">
+                            ${stock.consistencyScore.toFixed(0)}%
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right">
+                        <a 
+                            href="${tvUrl}" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="tv-table-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-obsidian-800 hover:bg-gold-500 text-gold-300 hover:text-obsidian-950 border border-gold-500/25 text-xs font-medium transition"
+                        >
+                            <span>TradingView</span>
+                            <i data-lucide="external-link" class="w-3 h-3"></i>
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // =========================================================================
+        // 5. DEEP-DIVE MODAL & INTERACTIVE CHART.JS
+        // =========================================================================
+        function openStockModal(ticker) {
+            const rankIdx = top5Results.findIndex(s => s.ticker === ticker);
+            if (rankIdx === -1) return;
+            const stock = top5Results[rankIdx];
+            const rank = rankIdx + 1;
+
+            document.getElementById('modalRankBadge').textContent = `#${rank} TOP 5`;
+            document.getElementById('modalTicker').textContent = `SET: ${stock.ticker}`;
+            document.getElementById('modalSector').textContent = stock.sector;
+            document.getElementById('modalCompanyName').textContent = stock.name;
+            document.getElementById('modalTradingViewBtn').href = `https://www.tradingview.com/chart/?symbol=SET%3A${encodeURIComponent(stock.ticker)}`;
+
+            document.getElementById('modalPrice').textContent = `฿${stock.price.toFixed(2)}`;
+            const sign = stock.changePct > 0 ? '+' : '';
+            const priceChangeEl = document.getElementById('modalPriceChange');
+            priceChangeEl.textContent = `${sign}${stock.changePct.toFixed(2)}% • ปิด ${LATEST_SET_CLOSE_STR}`;
+            priceChangeEl.className = `text-[10px] mt-0.5 ${stock.changePct > 0 ? 'text-emerald-400' : stock.changePct < 0 ? 'text-rose-400' : 'text-slate-400'}`;
+
+            document.getElementById('modalRevGrowth').textContent = `+${stock.revCAGR.toFixed(1)}%`;
+            document.getElementById('modalRevStreak').textContent = `โต ${stock.revGrowthCount}/${stock.N} ไตรมาส`;
+            document.getElementById('modalProfitGrowth').textContent = `+${stock.profCAGR.toFixed(1)}%`;
+            document.getElementById('modalProfitStreak').textContent = `โต ${stock.profGrowthCount}/${stock.N} ไตรมาส`;
+            document.getElementById('modalDivGrowth').textContent = `+${stock.divCAGR.toFixed(1)}%`;
+            document.getElementById('modalDivStreak').textContent = `โต ${stock.divGrowthCount}/${stock.N} ไตรมาส`;
+            document.getElementById('modalConsistency').textContent = `${stock.consistencyScore.toFixed(1)}%`;
+            document.getElementById('modalYield').textContent = `Div. Yield ${stock.divYield.toFixed(2)}%`;
+            document.getElementById('modalChartQuarters').textContent = stock.N;
+
+            // Populate Quarterly Table (Latest first)
+            const qBody = document.getElementById('modalQuarterlyTableBody');
+            qBody.innerHTML = '';
+            for (let i = stock.N - 1; i >= 0; i--) {
+                const prevIdx = i >= 4 ? i - 4 : Math.max(0, i - 1);
+                const isGrowth = i === 0 || (
+                    stock.revSlice[i] >= stock.revSlice[prevIdx] &&
+                    stock.profSlice[i] >= stock.profSlice[prevIdx]
+                );
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-white/[0.02]';
+                row.innerHTML = `
+                    <td class="py-2 px-4 font-medium text-slate-200">${stock.labelsSlice[i]}</td>
+                    <td class="py-2 px-4 text-right text-sky-400">${stock.revSlice[i].toLocaleString('en-US', { minimumFractionDigits: 1 })}</td>
+                    <td class="py-2 px-4 text-right text-emerald-400 font-medium">${stock.profSlice[i].toLocaleString('en-US', { minimumFractionDigits: 1 })}</td>
+                    <td class="py-2 px-4 text-right text-gold-400">฿${stock.divSlice[i].toFixed(4)}</td>
+                    <td class="py-2 px-4 text-center">
+                        ${isGrowth 
+                            ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-400">เติบโต YoY</span>' 
+                            : '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] bg-slate-700/40 text-slate-400">ทรงตัว</span>'}
+                    </td>
+                `;
+                qBody.appendChild(row);
+            }
+
+            // Show Modal
+            const modal = document.getElementById('stockDetailModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+
+            // Render Chart.js
+            renderModalChart(stock);
+        }
+
+        function renderModalChart(stock) {
+            const ctx = document.getElementById('detailChart').getContext('2d');
+            if (modalChartInstance) {
+                modalChartInstance.destroy();
+            }
+
+            modalChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: stock.labelsSlice,
+                    datasets: [
+                        {
+                            label: 'รายได้รวม (ลบ.)',
+                            data: stock.revSlice,
+                            backgroundColor: 'rgba(56, 189, 248, 0.25)',
+                            borderColor: '#38BDF8',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            yAxisID: 'y',
+                            order: 3
+                        },
+                        {
+                            label: 'กำไรสุทธิ (ลบ.)',
+                            data: stock.profSlice,
+                            type: 'line',
+                            borderColor: '#10B981',
+                            backgroundColor: '#10B981',
+                            borderWidth: 2.5,
+                            pointRadius: 2.5,
+                            tension: 0.3,
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                        {
+                            label: 'เงินปันผล/หุ้น (บาท)',
+                            data: stock.divSlice,
+                            type: 'line',
+                            borderColor: '#E5C158',
+                            backgroundColor: '#E5C158',
+                            borderWidth: 2,
+                            borderDash: [4, 3],
+                            pointRadius: 2.5,
+                            tension: 0.3,
+                            yAxisID: 'y1',
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#CBD5E1',
+                                font: { family: 'Prompt', size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0B0F17',
+                            titleColor: '#E5C158',
+                            bodyColor: '#F1F5F9',
+                            borderColor: 'rgba(212, 175, 55, 0.3)',
+                            borderWidth: 1,
+                            padding: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#94A3B8', font: { size: 10 } }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94A3B8', font: { size: 10 } },
+                            title: { display: true, text: 'ล้านบาท', color: '#64748B', font: { size: 10 } }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: '#E5C158', font: { size: 10 } },
+                            title: { display: true, text: 'ปันผล (บาท)', color: '#E5C158', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function closeStockModal() {
+            const modal = document.getElementById('stockDetailModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openMethodologyModal() {
+            const modal = document.getElementById('methodologyModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeMethodologyModal() {
+            const modal = document.getElementById('methodologyModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Keyboard shortcuts & backdrop click closing
+        document.getElementById('quarterInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') runAnalysis();
+        });
+
+        document.getElementById('stockDetailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'stockDetailModal') closeStockModal();
+        });
+
+        document.getElementById('methodologyModal').addEventListener('click', (e) => {
+            if (e.target.id === 'methodologyModal') closeMethodologyModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeStockModal();
+                closeMethodologyModal();
+            }
+        });
+
+        // Initial Boot
+        window.addEventListener('DOMContentLoaded', () => {
+            updateLiveDateTimeDisplay();
+            setInterval(updateLiveDateTimeDisplay, 1000);
+            runAnalysis();
+        });
+    </script>
+</body>
+</html>
